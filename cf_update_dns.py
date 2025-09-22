@@ -5,16 +5,24 @@ import os
 import sys
 
 # ======= 配置部分 =======
-# 从环境变量获取API_TOKEN，如果没有则使用默认值（建议使用环境变量）
-python import os API_TOKEN = os.getenv("API_TOKEN", "PruReKED4nCaC2q-Ehw4Buv-WUGnLknTdsac7u7F") ✅
-DOMAIN = "ssssb.ggff.net"  # 主域名
-SUBDOMAIN = "yx"            # 子域名前缀，如 *, www, yx
+# 从环境变量获取重要参数
+API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
+ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID")
+DOMAIN = os.getenv("DOMAIN", "ssssb.ggff.net")  # 主域名
+SUBDOMAIN = os.getenv("SUBDOMAIN", "yx")        # 子域名前缀
+
+# 其他配置保持不变
 IP_FILE = "ip.txt"          # 存放 IP 文件路径
 PROXIED = False             # 是否开启 Cloudflare 代理 (橙色云)
 MAX_RECORDS = 200           # 只保留前 200 条
-RETRY_DELAY = 3              # 出错后重试等待时间（秒）
-SLEEP_TIME = 0.3             # 操作间隔防止封锁
+RETRY_DELAY = 3             # 出错后重试等待时间（秒）
+SLEEP_TIME = 0.3            # 操作间隔防止封锁
 # ========================
+
+# 检查必要的环境变量
+if not API_TOKEN:
+    print("[Error] 请设置 CLOUDFLARE_API_TOKEN 环境变量")
+    sys.exit(1)
 
 BASE_URL = "https://api.cloudflare.com/client/v4"
 
@@ -25,6 +33,12 @@ headers = {
 
 # ========== 获取 Zone ID ==========
 def get_zone_id(domain):
+    # 如果提供了 ZONE_ID 环境变量，直接使用
+    if ZONE_ID:
+        print(f"[Info] 使用环境变量中的 Zone ID: {ZONE_ID}")
+        return ZONE_ID
+        
+    # 否则通过 API 获取
     url = f"{BASE_URL}/zones"
     params = {"name": domain}
     resp = requests.get(url, headers=headers, params=params)
@@ -35,7 +49,9 @@ def get_zone_id(domain):
         print(f"[Error] 无法获取域名 {domain} 的 Zone ID，返回信息：{data}")
         sys.exit(1)
 
-    return data["result"][0]["id"]
+    zone_id = data["result"][0]["id"]
+    print(f"[Info] 通过 API 获取到 Zone ID: {zone_id}")
+    return zone_id
 
 # ========== 分页获取所有 DNS A 记录 ==========
 def get_all_dns_records(zone_id, subdomain):
@@ -163,5 +179,4 @@ def main():
     print("[Info] 所有操作完成！")
 
 if __name__ == "__main__":
-
     main()
