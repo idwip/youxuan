@@ -6,7 +6,7 @@ import sys
 
 # ======= 配置部分 =======
 # 从环境变量获取API_TOKEN，如果没有则使用默认值（建议使用环境变量）
-API_TOKEN = os.getenv("API_TOKEN", "PruReKED4nCaC2q-Ehw4Buv-WUGnLknTdsac7u7F")
+python import os API_TOKEN = os.getenv("API_TOKEN", "PruReKED4nCaC2q-Ehw4Buv-WUGnLknTdsac7u7F") ✅
 DOMAIN = "ssssb.ggff.net"  # 主域名
 SUBDOMAIN = "yx"            # 子域名前缀，如 *, www, yx
 IP_FILE = "ip.txt"          # 存放 IP 文件路径
@@ -163,4 +163,5 @@ def main():
     print("[Info] 所有操作完成！")
 
 if __name__ == "__main__":
+
     main()
