@@ -87,15 +87,23 @@ def get_all_dns_records(zone_id, subdomain):
 
         # 更安全的调试信息
         print(f"[Debug] API响应success: {data.get('success')}")
-        print(f"[Debug] 响应结果类型: {type(data.get('result'))}")
+        print(f"[Debug] 响应结果类型: {type(data)}")
+        print(f"[Debug] 完整响应内容: {json.dumps(data, indent=2)}")  # 添加完整响应输出
         
         if not data.get("success"):
             errors = data.get("errors", [])
             print(f"[Error] 获取 DNS 记录失败：{errors}")
             break
 
-        # 正确处理result数据
+        # 正确处理result数据 - 修复关键问题
         records = data.get("result", [])
+        
+        # 确保records是列表类型
+        if not isinstance(records, list):
+            print(f"[Error] records不是列表类型，而是: {type(records)}")
+            print(f"[Debug] records内容: {records}")
+            records = []
+        
         print(f"[Debug] 获取到 {len(records)} 条DNS记录")
         
         # 安全地访问第一条记录 - 修复KeyError: 0的问题
