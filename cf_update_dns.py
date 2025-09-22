@@ -70,20 +70,42 @@ def get_all_dns_records(zone_id, subdomain):
         resp.raise_for_status()
         data = resp.json()
 
-        # 添加更多调试信息
+        # 更安全的调试信息
         print(f"[Debug] API响应success: {data.get('success')}")
         print(f"[Debug] 响应结果类型: {type(data.get('result'))}")
-        if data.get('result') and len(data.get('result', [])) > 0:
-            print(f"[Debug] 第一条记录类型: {type(data['result'][0])}")
-            print(f"[Debug] 第一条记录内容: {data['result'][0]}")
-
+        
+        # 检查result的实际内容
+        result_data = data.get('result', {})
+        print(f"[Debug] result数据: {result_data}")
+        
         if not data.get("success"):
             print(f"[Error] 获取 DNS 记录失败：{data}")
             break
 
-        records = data["result"]
+        # 处理不同的result结构
+        records = []
+        if isinstance(result_data, list):
+            records = result_data
+            print(f"[Debug] 获取到 {len(records)} 条记录")
+            if records:
+                print(f"[Debug] 第一条记录: {records[0]}")
+        elif isinstance(result_data, dict):
+            # 如果是字典，可能包含分页信息或其他结构
+            if 'records' in result_data:
+                records = result_data['records']
+            elif 'result' in result_data:
+                records = result_data['result'] if isinstance(result_data['result'], list) else []
+            else:
+                # 尝试将字典转换为列表
+                records = [result_data]
+            print(f"[Debug] 从字典中提取到 {len(records)} 条记录")
+        else:
+            print(f"[Debug] 未知的result类型: {type(result_data)}")
+            records = []
+
         all_records.extend(records)
 
+        # 检查是否还有更多页面
         if len(records) < 100:
             break
         page += 1
@@ -157,9 +179,6 @@ def main():
     existing_records = get_all_dns_records(zone_id, SUBDOMAIN)
     print(f"[Info] 当前已有 {len(existing_records)} 条记录")
 
-    # 修复：添加类型检查和调试信息
-    print(f"[Debug] existing_records 类型: {type(existing_records)}")
-    
     # 安全地构建 existing_ips 字典
     existing_ips = {}
     valid_records = []
@@ -171,6 +190,7 @@ def main():
             if "content" in record:
                 existing_ips[record["content"]] = record
                 valid_records.append(record)
+                print(f"[Debug] 有效记录 {i}: IP={record['content']}")
             else:
                 print(f"[Warning] 记录 {i} 缺少 content 字段: {record}")
         else:
