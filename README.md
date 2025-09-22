@@ -1,18 +1,4 @@
-✅ 一、准备 GitHub 仓库文件结构
-创建以下文件结构：
-
-text
-your-repo/
-├── .github/
-│   └── workflows/
-│       ├── fetch-ips.yml
-│       └── update-dns.yml
-├── test_cloudflare_ips.py
-├── cf_update_dns.py
-├── ip.txt
-└── requirements.txt
-✅ 二
-需要设置的 GitHub 配置
+✅ 需要设置的 GitHub 配置
 1. Secrets（敏感信息，必须设置）：
 CLOUDFLARE_API_TOKEN - 你的 Cloudflare API Token
 
@@ -33,4 +19,5 @@ ZONE_ID 可选：如果不设置环境变量，会自动通过 API 获取
 保持原有逻辑：所有业务逻辑和错误处理都保持不变
 
 这样既保证了安全性（敏感信息不暴露），又保持了原有的所有功能！
+
 
