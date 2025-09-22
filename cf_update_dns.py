@@ -98,11 +98,15 @@ def get_all_dns_records(zone_id, subdomain):
         records = data.get("result", [])
         print(f"[Debug] 获取到 {len(records)} 条DNS记录")
         
-        if records:
+        # 安全地访问第一条记录 - 修复KeyError: 0的问题
+        if records and len(records) > 0:
             print(f"[Debug] 第一条记录类型: {type(records[0])}")
-            print(f"[Debug] 第一条记录键: {list(records[0].keys())}")
-            if 'content' in records[0]:
-                print(f"[Debug] 第一条记录IP: {records[0]['content']}")
+            if isinstance(records[0], dict):
+                print(f"[Debug] 第一条记录键: {list(records[0].keys())}")
+                if 'content' in records[0]:
+                    print(f"[Debug] 第一条记录IP: {records[0]['content']}")
+        else:
+            print("[Debug] 当前页没有记录")
 
         all_records.extend(records)
 
@@ -119,6 +123,7 @@ def get_all_dns_records(zone_id, subdomain):
         # 添加延迟避免请求过快
         time.sleep(SLEEP_TIME)
 
+    print(f"[Info] 总共获取到 {len(all_records)} 条DNS记录")
     return all_records
 
 # ========== 添加新记录 ==========
@@ -202,7 +207,7 @@ def main():
     valid_records = []
     
     for i, record in enumerate(existing_records):
-        if isinstance(record, dict) and "content" in record:
+        if isinstance(record, dict) and "content" in record and "id" in record:
             existing_ips[record["content"]] = record
             valid_records.append(record)
             print(f"[Debug] 有效记录 {i}: {record['name']} -> {record['content']}")
