@@ -19,13 +19,8 @@ jobs:
       with:
         python-version: '3.9'
 
-   - name: Install dependencies
-  run: |
-    if [ -f "requirements.txt" ]; then
-      pip install -r requirements.txt
-    else
-      pip install requests
-    fi
+   - name: Install requests
+  run: pip install requests
 
     - name: Run IP fetcher
       run: python test_cloudflare_ips.py
