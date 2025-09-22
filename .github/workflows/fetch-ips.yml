@@ -2,7 +2,7 @@ name: Fetch Cloudflare IPs Every 2 Hours
 
 on:
   schedule:
-    - cron: '0 */2 * * *'  # 每2小时运行一次
+    - cron: '50 */2 * * *'  # 每2:50小时运行一次
   workflow_dispatch:        # 允许手动触发
   push:                     # 代码推送时也运行
 
