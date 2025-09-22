@@ -67,7 +67,7 @@ def get_all_dns_records(zone_id, subdomain):
             "name": dns_name, 
             "page": page, 
             "per_page": 100,
-            "match": "all"  # 添加match参数确保精确匹配
+            "match": "all"
         }
         
         print(f"[Debug] 请求URL: {url}")
@@ -87,26 +87,28 @@ def get_all_dns_records(zone_id, subdomain):
 
         # 更安全的调试信息
         print(f"[Debug] API响应success: {data.get('success')}")
-        print(f"[Debug] 响应结果类型: {type(data)}")
-        print(f"[Debug] 完整响应内容: {json.dumps(data, indent=2)}")  # 添加完整响应输出
         
         if not data.get("success"):
             errors = data.get("errors", [])
             print(f"[Error] 获取 DNS 记录失败：{errors}")
             break
 
-        # 正确处理result数据 - 修复关键问题
+        # 正确处理result数据 - 这里应该是列表
         records = data.get("result", [])
         
         # 确保records是列表类型
         if not isinstance(records, list):
             print(f"[Error] records不是列表类型，而是: {type(records)}")
-            print(f"[Debug] records内容: {records}")
-            records = []
+            print(f"[Debug] 完整响应: {json.dumps(data, indent=2)}")
+            # 尝试从不同的路径获取记录
+            if isinstance(records, dict) and 'dns_records' in records:
+                records = records.get('dns_records', [])
+            else:
+                records = []
         
         print(f"[Debug] 获取到 {len(records)} 条DNS记录")
         
-        # 安全地访问第一条记录 - 修复KeyError: 0的问题
+        # 安全地访问第一条记录
         if records and len(records) > 0:
             print(f"[Debug] 第一条记录类型: {type(records[0])}")
             if isinstance(records[0], dict):
@@ -122,13 +124,17 @@ def get_all_dns_records(zone_id, subdomain):
         result_info = data.get("result_info", {})
         if result_info:
             print(f"[Debug] 分页信息: {result_info}")
+            total_pages = result_info.get('total_pages', 1)
+            current_page = result_info.get('page', page)
+            
+            if current_page >= total_pages:
+                break
+        else:
+            # 如果没有分页信息，检查记录数量
+            if len(records) < 100:
+                break
         
-        # 检查是否还有更多页面
-        if len(records) < 100:
-            break
         page += 1
-        
-        # 添加延迟避免请求过快
         time.sleep(SLEEP_TIME)
 
     print(f"[Info] 总共获取到 {len(all_records)} 条DNS记录")
@@ -151,15 +157,25 @@ def add_record(zone_id, subdomain, ip):
     print(f"[Debug] 添加记录URL: {url}")
     print(f"[Debug] 添加记录数据: {data}")
     
-    resp = requests.post(url, headers=headers, json=data)
-    result = resp.json()
-
-    if result.get("success"):
-        print(f"[Add] 添加成功：{ip}")
-        return True
-    else:
-        errors = result.get("errors", [])
-        print(f"[Error] 添加失败：{ip} - {errors}")
+    try:
+        resp = requests.post(url, headers=headers, json=data)
+        print(f"[Debug] 添加记录响应状态码: {resp.status_code}")
+        
+        if resp.status_code == 405:
+            print(f"[Error] 方法不允许，可能是URL错误: {url}")
+            return False
+            
+        result = resp.json()
+        
+        if result.get("success"):
+            print(f"[Add] 添加成功：{ip}")
+            return True
+        else:
+            errors = result.get("errors", [])
+            print(f"[Error] 添加失败：{ip} - {errors}")
+            return False
+    except Exception as e:
+        print(f"[Error] 添加记录时发生异常: {e}")
         return False
 
 # ========== 删除记录 ==========
@@ -168,15 +184,25 @@ def delete_record(zone_id, record_id, ip):
     url = f"{BASE_URL}/zones/{zone_id}/dns_records/{record_id}"
     print(f"[Debug] 删除记录URL: {url}")
     
-    resp = requests.delete(url, headers=headers)
-    result = resp.json()
+    try:
+        resp = requests.delete(url, headers=headers)
+        print(f"[Debug] 删除记录响应状态码: {resp.status_code}")
+        
+        if resp.status_code == 405:
+            print(f"[Error] 方法不允许，可能是URL错误: {url}")
+            return False
+            
+        result = resp.json()
 
-    if result.get("success"):
-        print(f"[Delete] 删除成功：{ip}")
-        return True
-    else:
-        errors = result.get("errors", [])
-        print(f"[Error] 删除失败：{ip} - {errors}")
+        if result.get("success"):
+            print(f"[Delete] 删除成功：{ip}")
+            return True
+        else:
+            errors = result.get("errors", [])
+            print(f"[Error] 删除失败：{ip} - {errors}")
+            return False
+    except Exception as e:
+        print(f"[Error] 删除记录时发生异常: {e}")
         return False
 
 # ========== 主流程 ==========
