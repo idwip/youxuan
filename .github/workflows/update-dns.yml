@@ -1,0 +1,27 @@
+name: Update Cloudflare DNS Every 2 Hours 10 Minutes
+
+on:
+  schedule:
+    - cron: '10 */2 * * *'  # 每2小时10分钟运行一次
+  workflow_dispatch:
+
+jobs:
+  update-dns:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run DNS Updater
+      env:
+        API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      run: python cf_update_dns.py
