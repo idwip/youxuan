@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 */2 * * *'  # 每2小时运行一次
   workflow_dispatch:        # 允许手动触发
-  push:                     # 代码推送时也运行（可选）
+  push:                     # 代码推送时也运行
 
 jobs:
   fetch-ips:
@@ -19,8 +19,8 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+    - name: Install requests
+      run: pip install requests
 
     - name: Run IP fetcher
       run: python test_cloudflare_ips.py
