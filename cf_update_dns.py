@@ -63,8 +63,19 @@ def get_all_dns_records(zone_id, subdomain):
         url = f"{BASE_URL}/zones/{zone_id}/dns_records"
         params = {"type": "A", "name": dns_name, "page": page, "per_page": 100}
         resp = requests.get(url, headers=headers, params=params)
+        
+        # 添加调试信息
+        print(f"[Debug] 获取DNS记录HTTP状态码: {resp.status_code}")
+        
         resp.raise_for_status()
         data = resp.json()
+
+        # 添加更多调试信息
+        print(f"[Debug] API响应success: {data.get('success')}")
+        print(f"[Debug] 响应结果类型: {type(data.get('result'))}")
+        if data.get('result') and len(data.get('result', [])) > 0:
+            print(f"[Debug] 第一条记录类型: {type(data['result'][0])}")
+            print(f"[Debug] 第一条记录内容: {data['result'][0]}")
 
         if not data.get("success"):
             print(f"[Error] 获取 DNS 记录失败：{data}")
@@ -76,6 +87,9 @@ def get_all_dns_records(zone_id, subdomain):
         if len(records) < 100:
             break
         page += 1
+        
+        # 添加延迟避免请求过快
+        time.sleep(SLEEP_TIME)
 
     return all_records
 
@@ -143,7 +157,28 @@ def main():
     existing_records = get_all_dns_records(zone_id, SUBDOMAIN)
     print(f"[Info] 当前已有 {len(existing_records)} 条记录")
 
-    existing_ips = {r["content"]: r for r in existing_records}  # IP -> 记录
+    # 修复：添加类型检查和调试信息
+    print(f"[Debug] existing_records 类型: {type(existing_records)}")
+    
+    # 安全地构建 existing_ips 字典
+    existing_ips = {}
+    valid_records = []
+    
+    for i, record in enumerate(existing_records):
+        print(f"[Debug] 记录 {i} 类型: {type(record)}")
+        
+        if isinstance(record, dict):
+            if "content" in record:
+                existing_ips[record["content"]] = record
+                valid_records.append(record)
+            else:
+                print(f"[Warning] 记录 {i} 缺少 content 字段: {record}")
+        else:
+            print(f"[Warning] 记录 {i} 不是字典类型，而是: {type(record)}")
+            print(f"[Debug] 问题记录内容: {record}")
+
+    print(f"[Info] 有效记录数量: {len(valid_records)}")
+    print(f"[Info] 现有IP数量: {len(existing_ips)}")
 
     failed_ips = []
 
@@ -160,7 +195,7 @@ def main():
 
     # === 删除不在前200的新列表的旧IP ===
     print("[Info] 开始删除多余旧记录...")
-    for record in existing_records:
+    for record in valid_records:  # 使用有效的记录
         old_ip = record["content"]
         if old_ip not in ip_list:
             delete_record(zone_id, record["id"], old_ip)
