@@ -1,8 +1,8 @@
-name: Fetch Cloudflare IPs Every 2 Hours
+name: Fetch Cloudflare IPs Every 3 Hours  # 修改：2小时改为3小时
 
 on:
   schedule:
-    - cron: '50 */2 * * *'  # 每2:50小时运行一次
+    - cron: '0 */3 * * *'  # 修改：每3小时运行一次（原为2小时）  # 时间修改：从 '50 */2 * * *' 改为 '0 */3 * * *'
   workflow_dispatch:        # 允许手动触发
   push:                     # 代码推送时也运行
 
@@ -32,3 +32,22 @@ jobs:
         git add ip.txt
         git diff --staged --quiet || git commit -m "Update IPs - $(date +'%Y-%m-%d %H:%M:%S')"
         git push
+
+    - name: Wait 3 minutes before triggering DNS update  # 新增：等待3分钟步骤
+      if: success()
+      run: |
+        echo "等待3分钟后触发DNS更新..."
+        sleep 180  # 180秒 = 3分钟  # 新增：3分钟延迟
+      shell: bash
+
+    - name: Trigger DNS update workflow  # 新增：触发DNS更新工作流
+      if: success()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'update-dns.yml',
+            ref: 'main'
+          })
