@@ -1,12 +1,16 @@
 name: 自动更新DNS
 
 on:
-  schedule:
-    - cron: '0 */3 * * *'  # 每3小时运行一次
+  workflow_run:  # 修改：新增workflow_run触发器，移除原来的schedule
+    workflows: ["Fetch Cloudflare IPs Every 3 Hours"]  # 新增：由IP获取工作流触发
+    types:
+      - completed
   workflow_dispatch:        # 允许手动触发
 
 jobs:
   update-dns:
+    # 新增：只有当IP获取工作流成功时才运行
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     
     steps:
