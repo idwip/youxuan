@@ -2,7 +2,7 @@ name: Fetch Cloudflare IPs Every 3 Hours  # 修改：2小时改为3小时
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # 修改：每3小时运行一次（原为2小时）  # 时间修改：从 '50 */2 * * *' 改为 '0 */3 * * *'
+   - cron: '0 12 * * *'  # 每天中午12点运行  # 时间修改：从 '50 */2 * * *' 改为 '0 */3 * * *'
   workflow_dispatch:        # 允许手动触发
   push:                     # 代码推送时也运行
 
